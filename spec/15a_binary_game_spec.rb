@@ -129,18 +129,34 @@ describe BinaryGame do
     # https://rspec.info/features/3-12/rspec-mocks/configuring-responses/returning-a-value/
 
     context 'when user inputs an incorrect value once, then a valid input' do
+      subject(:game_inputs) { described_class.new(1, 5) }
+
       before do
+        allow(game_inputs).to receive(:gets).and_return('a', '2')
       end
 
-      xit 'completes loop and displays error message once' do
+      it 'completes loop and displays error message once' do
+        min = game_inputs.instance_variable_get(:@minimum)
+        max = game_inputs.instance_variable_get(:@maximum)
+        error_message = "Input error! Please enter a number between #{min} or #{max}."
+        expect(game_inputs).to receive(:puts).with(error_message).once
+        game_inputs.player_input(min, max)
       end
     end
 
     context 'when user inputs two incorrect values, then a valid input' do
+      subject(:game_inputs) { described_class.new(1, 10) }
+
       before do
+        allow(game_inputs).to receive(:gets).and_return('a', '?', '5')
       end
 
-      xit 'completes loop and displays error message twice' do
+      it 'completes loop and displays error message twice' do
+        min = game_inputs.instance_variable_get(:@minimum)
+        max = game_inputs.instance_variable_get(:@maximum)
+        error_message = "Input error! Please enter a number between #{min} or #{max}."
+        expect(game_inputs).to receive(:puts).with(error_message).twice
+        game_inputs.player_input(min, max)
       end
     end
   end
@@ -154,14 +170,27 @@ describe BinaryGame do
     # Query Method -> Test the return value
 
     # Note: #verify_input will only return a number if it is between?(min, max)
-
     context 'when given a valid input as argument' do
-      xit 'returns valid input' do
+      subject(:valid_input_game) { described_class.new(0, 10) }
+
+      it 'returns valid input' do
+        min = valid_input_game.instance_variable_get(:@minimum)
+        max = valid_input_game.instance_variable_get(:@maximum)
+        valid_input = 2
+        result = valid_input_game.verify_input(min, max, valid_input)
+        expect(result).to eq(2)
       end
     end
 
     context 'when given invalid input as argument' do
-      xit 'returns nil' do
+      subject(:invalid_input_game) { described_class.new(0, 10) }
+
+      it 'returns nil' do
+        min = invalid_input_game.instance_variable_get(:@minimum)
+        max = invalid_input_game.instance_variable_get(:@maximum)
+        invalid_input = 11 
+        result = invalid_input_game.verify_input(min, max, invalid_input)
+        expect(result).to be_nil 
       end
     end
   end
@@ -203,10 +232,10 @@ describe BinaryGame do
       # Below (commented out) is the previous normal 'random_number' object
       # used in TDD. Compare it to the new verifying instance_double for the
       # RandomNumber class.
-      # let(:random_number) { double('random_number', value: 8) }
-      let(:random_update) { instance_double(RandomNumber, value: 3) }
+      let(:random_number) { double('random_number', value: 8) }
+      #let(:random_update) { instance_double(RandomNumber, value: 3) }
       let(:new_number) { 76 }
-      subject(:game_update) { described_class.new(1, 100, random_update) }
+      subject(:game_update) { described_class.new(1, 100, random_number) }
 
       # To 'Arrange' this test, two methods will need to be stubbed, so that
       # they do not execute. In addition, #player_input will have two arguments
@@ -221,7 +250,7 @@ describe BinaryGame do
       end
 
       it 'sends update_value to random_number' do
-        expect(random_update).to receive(:update_value).with(new_number)
+        expect(random_number).to receive(:update_value).with(new_number)
         game_update.update_random_number
       end
     end
@@ -253,7 +282,11 @@ describe BinaryGame do
 
     # Write a test for the following context.
     context 'when game minimum and maximum is 100 and 600' do
-      xit 'returns 9' do
+      subject(:game_six_hundred) { described_class.new(100, 600) }
+
+      it 'returns 9' do
+        max = game_six_hundred.maximum_guesses
+        expect(max).to eq(9)
       end
     end
   end
@@ -311,7 +344,13 @@ describe BinaryGame do
 
     # Write a test for the following context.
     context 'when game_over? is false five times' do
-      xit 'calls display_turn_order five times' do
+      before do
+        allow(search_display).to receive(:game_over?).and_return(false, false, false, false, false, true)
+      end
+
+      it 'calls display_turn_order five times' do
+        expect(game_display).to receive(:display_turn_order).with(search_display).exactly(5).times
+        game_display.display_binary_search(search_display)
       end
     end
   end
@@ -327,21 +366,34 @@ describe BinaryGame do
     #  by calling #display_guess.
 
     # Create a new subject and an instance_double for BinarySearch.
+    subject(:game_display) { described_class.new(0, 10) }
+    let(:binary_search) { instance_double(BinarySearch) }
 
     before do
       # You'll need to create a few method stubs.
+      allow(binary_search).to receive(:make_guess)
+      allow(game_display).to receive(:display_guess)
+      allow(binary_search).to receive(:update_range)
+      allow(binary_search).to receive(:game_over?)
     end
 
     # Command Method -> Test the change in the observable state
-    xit 'increases guess_count by one' do
+    it 'increases guess_count by one' do
+      game_display.display_turn_order(binary_search)
+      count = game_display.instance_variable_get(:@guess_count)
+      expect(count).to eq(1)
     end
 
     # Method with Outgoing Command -> Test that a message is sent
-    xit 'sends make_guess' do
+    it 'sends make_guess' do
+      expect(binary_search).to receive(:make_guess).once
+      game_display.display_turn_order(binary_search)
     end
 
     # Method with Outgoing Command -> Test that a message is sent
-    xit 'sends update_range' do
+    it 'sends update_range' do
+      expect(binary_search).to receive(:update_range).once
+      game_display.display_turn_order(binary_search)
     end
 
     # Using method expectations can be confusing. Stubbing the methods above
